@@ -79,7 +79,18 @@ and restart n8n.
 > **0.1.0 is not usable** — it contained only the credential type, which n8n's
 > UI installer rejects ("does not contain any nodes"), and its login hook was
 > never invoked because the credential did not declare the expirable
-> `sessionToken` property n8n requires. Use 0.2.0 or later.
+> `sessionToken` property n8n requires. Use 0.2.1 or later.
+
+### Troubleshooting
+
+**"Class could not be found. Please check if the class is named correctly."**
+on install (0.2.0): your instance has a stale copy of `n8n-workflow` hoisted
+into `~/.n8n/nodes/node_modules/` (left behind by community packages
+installed on older n8n versions). Node resolves that copy before n8n's own,
+and if it predates n8n 1.85 it lacks `NodeConnectionTypes`, so the node class
+throws while loading. Fixed in 0.2.1, which no longer depends on that export.
+You can check with `ls ~/.n8n/nodes/node_modules/n8n-workflow` inside your
+n8n container; removing the stale copy is optional.
 
 ## Build from source
 
