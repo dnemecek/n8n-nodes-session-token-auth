@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-session-token-auth",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "n8n credential type (plus a small helper node) for APIs that log in with username/password, get back a session token, and send that token in a header on every subsequent request.",
   "license": "MIT",
   "author": "David Nemecek",

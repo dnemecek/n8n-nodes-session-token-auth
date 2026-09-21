@@ -7,7 +7,7 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeConnectionTypes, NodeOperationError } from 'n8n-workflow';
+import { NodeOperationError } from 'n8n-workflow';
 
 import { SessionTokenAuth } from '../../credentials/SessionTokenAuth.credentials';
 
@@ -36,8 +36,12 @@ export class SessionToken implements INodeType {
 		defaults: {
 			name: 'Session Token',
 		},
-		inputs: [NodeConnectionTypes.Main],
-		outputs: [NodeConnectionTypes.Main],
+		// String literals instead of `NodeConnectionTypes.Main`: that runtime export
+		// only exists in n8n >= 1.85 (March 2025). On older instances it is
+		// `undefined`, the constructor throws a TypeError and n8n reports the
+		// package as "Class could not be found". 'main' is valid in every version.
+		inputs: ['main'],
+		outputs: ['main'],
 		credentials: [
 			{
 				name: 'sessionTokenAuth',
