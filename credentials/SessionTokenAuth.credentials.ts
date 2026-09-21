@@ -178,7 +178,7 @@ export class SessionTokenAuth implements ICredentialType {
 			default: '',
 			placeholder: '{ "LanguageId": "CZ", "DbProfile": "erp", "UseWindowsAuthentication": false }',
 			description:
-				'Optional JSON object with additional fixed fields the login endpoint requires besides username/password. Sent in the login body (POST; with Body Type "None" they form the JSON body while credentials go via HTTP Basic) or as query params (GET). Username/Password fields always win on key conflicts.',
+				'Optional JSON object with additional fixed fields the login endpoint requires besides username/password. Sent in the login body (POST) or as query params (GET), where the Username/Password fields overwrite same-named keys. With Body Type "None" they form the JSON body on their own (credentials go via HTTP Basic) and keys named like the Username/Password fields are dropped.',
 		},
 		{
 			displayName: 'Token Field (in Login Response)',
@@ -257,6 +257,9 @@ export class SessionTokenAuth implements ICredentialType {
 		};
 
 		const usesBasicAuthOnLogin = method === 'POST' && bodyType === 'none';
+		const extraBodyForBasicLogin: IDataObject = Object.fromEntries(
+			Object.entries(extraLoginFields).filter(([key]) => key !== usernameField && key !== passwordField),
+		);
 		if (usesBasicAuthOnLogin && String(credentials.username ?? '').includes(':')) {
 			// RFC 7617 §2: the decoder splits "username:password" on the FIRST colon,
 			// so a colon inside the username silently misparses into the wrong pair
@@ -279,14 +282,16 @@ export class SessionTokenAuth implements ICredentialType {
 			url,
 			qs: method === 'GET' ? credentialFields : undefined,
 			// POST + 'none': credentials travel as HTTP Basic, so the body carries only
-			// the extra fields (if any) — they must never be silently dropped.
+			// the extra fields (if any). Keys named like the Username/Password fields are
+			// removed there — the real credentials go via Basic, never via a stray value
+			// from Extra Login Fields.
 			body:
 				method !== 'POST'
 					? undefined
 					: bodyType !== 'none'
 						? credentialFields
-						: Object.keys(extraLoginFields).length
-							? extraLoginFields
+						: Object.keys(extraBodyForBasicLogin).length
+							? extraBodyForBasicLogin
 							: undefined,
 			auth: usesBasicAuthOnLogin
 				? { username: String(credentials.username ?? ''), password: String(credentials.password ?? '') }
