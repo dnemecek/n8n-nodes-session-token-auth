@@ -178,7 +178,7 @@ export class SessionTokenAuth implements ICredentialType {
 			default: '',
 			placeholder: '{ "LanguageId": "CZ", "DbProfile": "erp", "UseWindowsAuthentication": false }',
 			description:
-				'Optional JSON object with additional fixed fields the login endpoint requires besides username/password. Sent in the login body (POST) or as query params (GET). Username/Password fields always win on key conflicts.',
+				'Optional JSON object with additional fixed fields the login endpoint requires besides username/password. Sent in the login body (POST; with Body Type "None" they form the JSON body while credentials go via HTTP Basic) or as query params (GET). Username/Password fields always win on key conflicts.',
 		},
 		{
 			displayName: 'Token Field (in Login Response)',
@@ -249,8 +249,9 @@ export class SessionTokenAuth implements ICredentialType {
 		const usernameField = String(credentials.usernameField ?? 'username');
 		const passwordField = String(credentials.passwordField ?? 'password');
 
+		const extraLoginFields = parseExtraLoginFields(credentials.extraLoginFields);
 		const credentialFields: IDataObject = {
-			...parseExtraLoginFields(credentials.extraLoginFields),
+			...extraLoginFields,
 			[usernameField]: credentials.username,
 			[passwordField]: credentials.password,
 		};
@@ -277,7 +278,16 @@ export class SessionTokenAuth implements ICredentialType {
 			method,
 			url,
 			qs: method === 'GET' ? credentialFields : undefined,
-			body: method === 'POST' && bodyType !== 'none' ? credentialFields : undefined,
+			// POST + 'none': credentials travel as HTTP Basic, so the body carries only
+			// the extra fields (if any) — they must never be silently dropped.
+			body:
+				method !== 'POST'
+					? undefined
+					: bodyType !== 'none'
+						? credentialFields
+						: Object.keys(extraLoginFields).length
+							? extraLoginFields
+							: undefined,
 			auth: usesBasicAuthOnLogin
 				? { username: String(credentials.username ?? ''), password: String(credentials.password ?? '') }
 				: undefined,
