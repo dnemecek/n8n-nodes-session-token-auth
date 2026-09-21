@@ -19,7 +19,6 @@
     "session-token",
     "authentication"
   ],
-  "main": "index.js",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch"
