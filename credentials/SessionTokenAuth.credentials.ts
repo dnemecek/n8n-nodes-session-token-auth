@@ -36,6 +36,30 @@ function getByPath(obj: IDataObject, path: string): unknown {
 		.reduce<unknown>((acc, key) => (acc && typeof acc === 'object' ? (acc as IDataObject)[key] : undefined), obj);
 }
 
+/**
+ * Parses the optional "Extra Login Fields" JSON. n8n hands a `json` property
+ * over either as a string (typed in the UI) or already as an object (set via
+ * API/import), so both are accepted. Anything that is not a plain object is
+ * rejected loudly — silently ignoring a typo here would produce a login
+ * request the API rejects with an unhelpful 400.
+ */
+function parseExtraLoginFields(raw: unknown): IDataObject {
+	if (raw === undefined || raw === null || raw === '') return {};
+	let value: unknown = raw;
+	if (typeof raw === 'string') {
+		if (!raw.trim()) return {};
+		try {
+			value = JSON.parse(raw);
+		} catch {
+			throw new Error('SessionTokenAuth: "Extra Login Fields" is not valid JSON.');
+		}
+	}
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		throw new Error('SessionTokenAuth: "Extra Login Fields" must be a JSON object, e.g. { "LanguageId": "CZ" }.');
+	}
+	return value as IDataObject;
+}
+
 export class SessionTokenAuth implements ICredentialType {
 	name = 'sessionTokenAuth';
 
@@ -148,6 +172,15 @@ export class SessionTokenAuth implements ICredentialType {
 			description: 'Key name for the password in the login request body.',
 		},
 		{
+			displayName: 'Extra Login Fields (JSON)',
+			name: 'extraLoginFields',
+			type: 'json',
+			default: '',
+			placeholder: '{ "LanguageId": "CZ", "DbProfile": "erp", "UseWindowsAuthentication": false }',
+			description:
+				'Optional JSON object with additional fixed fields the login endpoint requires besides username/password. Sent in the login body (POST) or as query params (GET). Username/Password fields always win on key conflicts.',
+		},
+		{
 			displayName: 'Token Field (in Login Response)',
 			name: 'tokenField',
 			type: 'string',
@@ -217,6 +250,7 @@ export class SessionTokenAuth implements ICredentialType {
 		const passwordField = String(credentials.passwordField ?? 'password');
 
 		const credentialFields: IDataObject = {
+			...parseExtraLoginFields(credentials.extraLoginFields),
 			[usernameField]: credentials.username,
 			[passwordField]: credentials.password,
 		};

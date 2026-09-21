@@ -38,6 +38,7 @@ every request that uses the credential.
 | Login Body Type | For POST only: `JSON`, `Form-Urlencoded`, or `None` (HTTP Basic Auth on the login request itself). |
 | Username / Password | Your login credentials. |
 | Username Field / Password Field | Key names used in the login request body. |
+| Extra Login Fields (JSON) | Optional fixed fields the login endpoint requires besides username/password, e.g. `{ "LanguageId": "CZ", "DbProfile": "erp", "UseWindowsAuthentication": false }`. Merged into the login body (POST) or query (GET); Username/Password win on conflicts. |
 | Token Field | Dot-path to the token in the login response, e.g. `sessionId`. |
 | Username Field (in Login Response) | Optional — if the server echoes back a canonical username to use afterwards. |
 | Header Format | `Basic` (base64 of `username:token`) or `Raw Token`. |
