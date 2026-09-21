@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Tajnosti — NIKDY do gitu
+.env
+*.env
+!*.env.example
+*.key
+*.pem
+
+# Node / TypeScript build
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Lokalni / scratch
+local/
+.claude/settings.local.json
+
+# Editor backupy
+*~
+*.bak
