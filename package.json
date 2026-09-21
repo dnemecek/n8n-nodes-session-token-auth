@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-session-token-auth",
-  "version": "0.1.0",
-  "description": "n8n Credential Type for APIs that log in with username/password, get back a session token, and send that token in a header on every subsequent request.",
+  "version": "0.2.0",
+  "description": "n8n credential type (plus a small helper node) for APIs that log in with username/password, get back a session token, and send that token in a header on every subsequent request.",
   "license": "MIT",
   "author": "David Nemecek",
   "homepage": "https://github.com/dnemecek/n8n-nodes-session-token-auth",
@@ -31,7 +31,9 @@
     "credentials": [
       "dist/credentials/SessionTokenAuth.credentials.js"
     ],
-    "nodes": []
+    "nodes": [
+      "dist/nodes/SessionToken/SessionToken.node.js"
+    ]
   },
   "devDependencies": {
     "@types/node": "^26.6.2",

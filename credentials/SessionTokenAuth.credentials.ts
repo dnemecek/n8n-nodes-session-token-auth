@@ -1,5 +1,4 @@
 import type {
-	IAuthenticate,
 	ICredentialDataDecryptedObject,
 	ICredentialTestRequest,
 	ICredentialType,
@@ -7,6 +6,7 @@ import type {
 	IHttpRequestHelper,
 	IHttpRequestOptions,
 	INodeProperties,
+	Icon,
 } from 'n8n-workflow';
 
 /**
@@ -21,10 +21,13 @@ import type {
  *   - B: login returns { sessionId } -> a custom header carries the raw token,
  *     e.g. X-Session-Id: <token>
  *
- * n8n calls `preAuthentication` once per credential entry (cached, and re-run
- * automatically when a request using it comes back 401, per credentialsExpired
- * handling in ICredentialsHelper) and merges its returned IDataObject into the
- * decrypted credentials object that `authenticate` then sees.
+ * How n8n drives this (packages/cli/src/credentials-helper.ts, `preAuthentication`):
+ * the hook is only ever invoked when the credential type declares a `hidden`
+ * property with `typeOptions.expirable: true` AND that property is empty (first
+ * use) or a request came back 401 (`credentialsExpired`) or the credential is
+ * being tested. The returned object must contain that same property name, or
+ * n8n discards the result. That is why `sessionToken` below is declared as a
+ * hidden expirable property: without it the login would never run.
  */
 
 function getByPath(obj: IDataObject, path: string): unknown {
@@ -40,7 +43,33 @@ export class SessionTokenAuth implements ICredentialType {
 
 	documentationUrl = 'https://github.com/dnemecek/n8n-nodes-session-token-auth';
 
+	icon: Icon = 'fa:key';
+
+	// Makes this credential appear as a ready-made "Session Token Auth" HTTP Request
+	// preset in the node palette (n8n's credential-only-node mechanism).
+	httpRequestNode: ICredentialType['httpRequestNode'] = {
+		name: 'Session Token Auth',
+		docsUrl: 'https://github.com/dnemecek/n8n-nodes-session-token-auth',
+		apiBaseUrlPlaceholder: 'https://api.example.com/',
+	};
+
 	properties: INodeProperties[] = [
+		{
+			// The expirable property: n8n runs `preAuthentication` only while this is
+			// empty (or after a 401), and stores the returned value here.
+			displayName: 'Session Token',
+			name: 'sessionToken',
+			type: 'hidden',
+			typeOptions: { expirable: true },
+			default: '',
+		},
+		{
+			// Filled by `preAuthentication` alongside the token (server-confirmed username).
+			displayName: 'Resolved Username',
+			name: 'resolvedUsername',
+			type: 'hidden',
+			default: '',
+		},
 		{
 			displayName: 'Base URL',
 			name: 'baseUrl',
@@ -159,6 +188,15 @@ export class SessionTokenAuth implements ICredentialType {
 			description: 'Header sent on every authenticated request, e.g. "Authorization" or "X-Session-Id".',
 			required: true,
 		},
+		{
+			displayName: 'Test Path',
+			name: 'testPath',
+			type: 'string',
+			default: '',
+			placeholder: 'api/me',
+			description:
+				'Optional path (relative to Base URL) of an authenticated GET endpoint used by the "Test" button. The test always performs the login first; if this is empty the test falls back to a GET on the Login Path, which many APIs reject even though the login itself succeeded.',
+		},
 	];
 
 	async preAuthentication(
@@ -266,7 +304,7 @@ export class SessionTokenAuth implements ICredentialType {
 	// and we should not guess). This form is 100% unambiguous: we get real
 	// `credentials` (already merged with preAuthentication's return value) and just
 	// set the header ourselves.
-	authenticate: IAuthenticate = async (
+	authenticate = async (
 		credentials: ICredentialDataDecryptedObject,
 		requestOptions: IHttpRequestOptions,
 	): Promise<IHttpRequestOptions> => {
@@ -285,11 +323,13 @@ export class SessionTokenAuth implements ICredentialType {
 		return requestOptions;
 	};
 
+	// n8n runs `preAuthentication` (the actual login) before this request when the
+	// credential is tested, then sends this request with `authenticate` applied.
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: '={{$credentials.baseUrl}}',
-			url: '={{$credentials.loginPath}}',
-			method: 'POST',
+			url: '={{$credentials.testPath || $credentials.loginPath}}',
+			method: 'GET',
 		},
 	};
 }
