@@ -46,6 +46,13 @@ export class SessionToken implements INodeType {
 		],
 		properties: [
 			{
+				displayName:
+					'The output of this node contains a live session token and the ready-to-use auth header. n8n saves node output in the execution history in plain text, so anyone who can view executions of this workflow can read the token. Prefer using the credential directly on an HTTP Request node; use this node only when you really need the raw token, and consider disabling "Save successful executions" for the workflow.',
+				name: 'tokenExposureNotice',
+				type: 'notice',
+				default: '',
+			},
+			{
 				displayName: 'Operation',
 				name: 'operation',
 				type: 'options',
@@ -107,8 +114,15 @@ export class SessionToken implements INodeType {
 				returnData.push({ json, pairedItem: { item: itemIndex } });
 			} catch (error) {
 				if (this.continueOnFail()) {
+					// Same top-level shape as a successful item, so downstream expressions
+					// like {{ $json.header.value }} never hit an undefined parent.
 					returnData.push({
-						json: { error: (error as Error).message },
+						json: {
+							sessionToken: null,
+							username: null,
+							header: { name: null, value: null },
+							error: (error as Error).message,
+						},
 						pairedItem: { item: itemIndex },
 					});
 					continue;
