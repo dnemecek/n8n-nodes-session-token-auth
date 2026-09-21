@@ -20,3 +20,4 @@ local/
 # Editor backupy
 *~
 *.bak
+*.tgz
