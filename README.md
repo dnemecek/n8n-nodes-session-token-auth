@@ -43,7 +43,7 @@ every request that uses the credential.
 | Username Field (in Login Response) | Optional — if the server echoes back a canonical username to use afterwards. |
 | Header Format | `Basic` (base64 of `username:token`) or `Raw Token`. |
 | Header Name | Header sent on every request, e.g. `Authorization` or `X-Session-Id`. |
-| Test Path | Optional authenticated `GET` endpoint used by the credential's **Test** button (e.g. `api/me`). The test always logs in first; without a Test Path it falls back to a `GET` on the Login Path, which many APIs reject even though the login succeeded. |
+| Test Path | `GET` endpoint used by the credential's **Test** button (e.g. `api/me` or `health`). The test always performs the login first, so even an unauthenticated health endpoint gives a meaningful test. Without a Test Path it falls back to a `GET` on the Login Path, which many APIs reject (e.g. `405 Method Not Allowed`) even though the login succeeded. |
 
 ## Session Token node output
 
