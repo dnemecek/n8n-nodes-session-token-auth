@@ -71,8 +71,7 @@ nodes → Install* and enter `n8n-nodes-session-token-auth`.
 Or manually, in n8n's user folder:
 
 ```bash
-cd ~/.n8n/nodes
-npm install n8n-nodes-session-token-auth
+mkdir -p ~/.n8n/nodes && cd ~/.n8n/nodes && npm install n8n-nodes-session-token-auth
 ```
 
 and restart n8n.
