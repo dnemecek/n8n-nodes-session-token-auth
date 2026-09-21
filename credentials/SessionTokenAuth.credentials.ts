@@ -247,9 +247,16 @@ export class SessionTokenAuth implements ICredentialType {
 			auth: usesBasicAuthOnLogin
 				? { username: String(credentials.username ?? ''), password: String(credentials.password ?? '') }
 				: undefined,
+			// Content-Type is always explicit on POST. With 'none' there is no body at
+			// all, yet some APIs (e.g. a JSON API whose login takes HTTP Basic Auth)
+			// still reject a request without Content-Type: application/json (HTTP 415).
+			// For 'json' n8n's helper would set it anyway; being explicit costs nothing.
 			headers:
-				method === 'POST' && bodyType === 'form'
-					? { 'Content-Type': 'application/x-www-form-urlencoded' }
+				method === 'POST'
+					? {
+							'Content-Type':
+								bodyType === 'form' ? 'application/x-www-form-urlencoded' : 'application/json',
+						}
 					: undefined,
 			// Response parsing is independent of how the REQUEST body was encoded
 			// (loginBodyType describes the request, not what the server replies with).

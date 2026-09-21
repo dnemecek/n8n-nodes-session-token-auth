@@ -7,7 +7,6 @@ import type {
 	INodeType,
 	INodeTypeDescription,
 } from 'n8n-workflow';
-import { NodeOperationError } from 'n8n-workflow';
 
 import { SessionTokenAuth } from '../../credentials/SessionTokenAuth.credentials';
 
@@ -84,9 +83,10 @@ export class SessionToken implements INodeType {
 			try {
 				const operation = this.getNodeParameter('operation', itemIndex) as string;
 				if (operation !== 'getToken') {
-					throw new NodeOperationError(this.getNode(), `Unknown operation "${operation}"`, {
-						itemIndex,
-					});
+					// Plain Error on purpose: n8n wraps it with the node context itself. This
+					// file must not `require('n8n-workflow')` at runtime — see the comment
+					// on `inputs` below.
+					throw new Error(`Unknown operation "${operation}"`);
 				}
 
 				const credentials = await this.getCredentials<ICredentialDataDecryptedObject>(
